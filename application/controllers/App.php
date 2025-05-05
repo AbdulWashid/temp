@@ -145,20 +145,70 @@
 								$this->db->insert('supplymore_tbl',$data);
 								$supplymore_id = $this->db->insert_id();
 								// transaction per day ==================
-									// Get last transaction
-									$lastTrans = $this->db->select('balance, balance_status')
-														->from('transaction')
-														->where('customer_id', $customer_id)
-														->order_by('id', 'DESC')
-														->limit(1)
-														->get()
-														->row_array();
+									$trans_date = date('Y-m-d');
 
-									$previous_balance = isset($lastTrans['balance']) ? $lastTrans['balance'] : 0;
-									$balance_status = isset($lastTrans['balance_status']) ? $lastTrans['balance_status'] : 'clear';
-									// OUT transaction (supply/tanki)
+									$in = $this->db->get_where('transaction', [
+										'customer_id' => $customer_id,
+										'date' => $trans_date,
+										'type' => 'in'
+									])->row_array();
+									
+									if(empty($in)) {
+										$lastTrans = $this->db->select('balance, balance_status,amount')
+															->from('transaction')
+															->where('customer_id', $customer_id)
+															->order_by('id', 'DESC')
+															->limit(1)
+															->get()
+															->row_array();
+			
+										$in_balance_old = isset($lastTrans['balance']) ? $lastTrans['balance'] : 0;
+										$in_status_old = isset($lastTrans['balance_status']) ? $lastTrans['balance_status'] : 'clear';
+										
+										$this->db->insert('transaction', array(
+											'customer_id' => $customer_id,
+											'driver_id' => $driver['driver_id'],
+											'type' => 'out',
+											'amount' => 0,
+											'balance' => $in_balance_old,
+											'balance_status' => $in_status_old,
+											'date' => date('Y-m-d')
+										));
+										$this->db->insert('transaction', array(
+											'customer_id' => $customer_id,
+											'driver_id' => $driver['driver_id'],
+											'type' => 'in',
+											'amount' => 0,
+											'balance' => $in_balance_old,
+											'balance_status' => $in_status_old,
+											'date' => date('Y-m-d')
+										));
+									}
+
+									// Get last transaction details
+									// $lastTrans = $this->db->select('balance,balance_status,amount')
+									// 					->from('transaction')
+									// 					->where('customer_id', $customer_id)
+									// 					->order_by('id', 'DESC')
+									// 					->limit(1)
+									// 					->get()
+									// 					->row_array();
+
+									
 									if ($tanki_bhari > 0) {
+										
 										$new_amount = $customer['kane_charge'] * $tanki_bhari;
+
+										$lastTrans = $this->db->get_where('transaction', [
+											'customer_id' => $customer_id,
+											'date' => $trans_date,
+											'type' => 'out'
+										])->row_array();
+	
+										$previous_balance = $lastTrans['balance'] ;
+										$balance_status = $lastTrans['balance_status'];
+										$collect_amount = $lastTrans['amount'];
+										
 
 										if ($balance_status == 'pending' || $balance_status == 'clear') {
 											$new_balance = $previous_balance + $new_amount;
@@ -175,35 +225,61 @@
 												$status = 'overpaid';
 											}
 										}
-
-										$this->db->insert('transaction', array(
-											'customer_id' => $customer_id,
-											'driver_id' => $driver['driver_id'],
-											'type' => 'out',
-											'amount' => $new_amount,
+										$this->db->where('id', $lastTrans['id'])->update('transaction', [
 											'balance' => $new_balance,
 											'balance_status' => $status,
-											'date' => date('Y-m-d', strtotime($supply_date))
-										));
+											'amount' => $collect_amount + $new_amount
+										]);
 
-										// update for next step
-										$previous_balance = $new_balance;
-										$balance_status = $status;
-									}
-									else{
-										$this->db->insert('transaction', array(
+										$lastTrans = $this->db->get_where('transaction', [
 											'customer_id' => $customer_id,
-											'driver_id' => $driver['driver_id'],
-											'type' => 'out',
-											'amount' => 0,
-											'balance' => $previous_balance,
-											'balance_status' => $balance_status,
-											'date' => date('Y-m-d', strtotime($supply_date))
-										));
+											'date' => $trans_date,
+											'type' => 'in'
+										])->row_array();
+	
+										$previous_balance = $lastTrans['balance'] ;
+										$balance_status = $lastTrans['balance_status'];
+										$collect_amount = $lastTrans['amount'];
+
+										if ($balance_status == 'overpaid') {
+										
+											if ($new_amount > $collect_amount) {
+												$balance_in = $new_amount - $previous_balance;
+												$status_in = 'pending';
+											} elseif ($new_amount == $collect_amount) {
+												$balance_in = 0;
+												$status_in = 'clear';
+											} else {
+												$balance_in = $previous_balance - $new_amount;
+												$status_in = 'overpaid';
+											}
+										} 
+										elseif($balance_status == 'clear' || $balance_status == 'pending'){
+											$balance_in = $previous_balance + $new_amount;
+											$status_in = 'pending';
+	
+										}
+										
+										$this->db->where('id', $lastTrans['id'])->update('transaction', [
+											'balance' => $balance_in,
+											'balance_status' => $status_in,
+										]);
 									}
 
 									// IN transaction (payment/collection)
 									if ($amount > 0) {
+
+										$lastTrans = $this->db->get_where('transaction', [
+											'customer_id' => $customer_id,
+											'date' => $trans_date,
+											'type' => 'in'
+										])->row_array();
+	
+										$previous_balance = $lastTrans['balance'] ;
+										$balance_status = $lastTrans['balance_status'];
+										$collect_amount = $lastTrans['amount'];
+
+
 										if ($balance_status == 'overpaid' || $balance_status == 'clear') {
 											$new_balance = $previous_balance + $amount;
 											$status = 'overpaid';
@@ -220,25 +296,11 @@
 											}
 										}
 
-										$this->db->insert('transaction', array(
-											'customer_id' => $customer_id,
-											'driver_id' => $driver['driver_id'],
-											'type' => 'in',
-											'amount' => $amount,
+										$this->db->where('id', $lastTrans['id'])->update('transaction', [
 											'balance' => $new_balance,
 											'balance_status' => $status,
-											'date' => date('Y-m-d', strtotime($supply_date))
-										));
-									}else{
-										$this->db->insert('transaction', array(
-											'customer_id' => $customer_id,
-											'driver_id' => $driver['driver_id'],
-											'type' => 'in',
-											'amount' => $amount,
-											'balance' => $previous_balance,
-											'balance_status' => $balance_status,
-											'date' => date('Y-m-d', strtotime($supply_date))
-										));
+											'amount' => $collect_amount + $amount
+										]);
 									}
 
 								// transaction per day ==================
