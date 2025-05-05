@@ -1,0 +1,237 @@
+
+<!--app-content open-->
+<div class="app-content">
+    <div class="side-app">
+
+        <!-- PAGE-HEADER -->
+        <div class="page-header">
+            <ol class="breadcrumb"><!-- breadcrumb -->
+                <li class="breadcrumb-item"><a href="#">Report</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Report Edit</li>
+            </ol><!-- End breadcrumb -->
+            
+        </div>
+        <!-- PAGE-HEADER END -->
+
+        <!-- ROW-1 OPEN -->
+        <div class="row">
+            <div class="col-md-12 col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Search</h3>
+                    </div>
+                    <div class="card-body">
+                        <form action="<?php echo base_url('admin/report/customerReportEdit'); ?>" method="POST">
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <div class="form-group">
+                                        <label for="">Select Customer</label>
+                                        <select name="customer_id" id="customer_id" class="form-control select2-show-search">
+                                            <option value="">Select</option>
+                                            <?php 
+                                                foreach($customer_list as $value){
+                                                    if($value['customer_id'] == $customer_id){
+                                                        echo '<option value="'.$value['customer_id'].'" selected>'.$value['customer_name'].'</option>';
+                                                    }else{
+                                                        echo '<option value="'.$value['customer_id'].'">'.$value['customer_name'].'</option>';
+                                                    }
+                                                    
+                                                }
+                                            ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-sm-3">
+                                    <button type="submit" class="btn btn-success btn-md" style="margin-top:28px;">SEARCH</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>    
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Report List</h3>
+                        
+                    </div>
+                    <div class="card-body">
+                        <?php 
+                            if(!empty($this->session->flashdata('msg'))){
+                                echo $this->session->flashdata('msg');
+                            }
+                        ?>
+                        <form action="<?php echo base_url('admin/report/reportUpdate'); ?>" method="POST">
+                            <div class="table-responsive">
+                                <table id="report_list" class="table table-striped table-bordered text-nowrap w-100">
+                                    <thead>
+                                        <tr>
+                                            <th>क्र.</th> 
+                                            <th>तारीख</th>
+                                            <th>भरी टंकी</th>
+                                            <th>खाली टंकी</th>
+                                            <th>स्टॉक</th>
+                                            <th>अमाउंट</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php 
+                                            if(!empty($supply_list)){
+                                                $i = 1;
+                                                foreach($supply_list as $value){
+                                                    ?>
+                                                    <tr>
+                                                        <td><?php echo $i; ?></td>
+                                                        <td>
+                                                            <input type="hidden" name="sid[]" value="<?php echo $value['sid']; ?>">
+                                                            <input type="hidden" name="customer_id" value="<?php echo $customer_id; ?>">
+                                                            <input type="hidden" name="supply_date[]" value="<?php echo $value['supply_date']; ?>">
+                                                            <input type="hidden" name="supply_date<?php echo $value['sid']; ?>" value="<?php echo $value['supply_date']; ?>">
+                                                            <?php echo date('d-m-Y',strtotime($value['supply_date'])); ?>
+                                                            <input type="hidden" name="tanki_bhari_<?php echo $value['supply_date'] ?>[]" value="<?php echo $value['tanki_bhari']; ?>">
+                                                            <input type="hidden" name="tanki_khali_<?php echo $value['supply_date'] ?>[]" value="<?php echo $value['tanki_khali']; ?>">
+                                                            <input type="hidden" name="stock_<?php echo $value['supply_date'] ?>[]" value="<?php echo $value['stock']; ?>">
+                                                            <input type="hidden" name="amount_<?php echo $value['supply_date'] ?>[]" value="<?php echo $value['amount']; ?>">
+                                                        </td>
+                                                        <td>
+                                                            <input type="number" name="tanki_bhari<?php echo $value['sid']; ?>" value="<?php echo $value['tanki_bhari']; ?>">
+                                                        </td>
+                                                        <td>
+                                                            <input type="number" name="tanki_khali<?php echo $value['sid']; ?>" value="<?php echo $value['tanki_khali']; ?>">
+                                                        </td>
+                                                        <td>
+                                                            <input type="number" name="stock<?php echo $value['sid']; ?>" value="<?php echo $value['stock']; ?>">
+                                                        </td>
+                                                        <td>
+                                                            <input type="number" name="amount<?php echo $value['sid']; ?>" value="<?php echo $value['amount']; ?>">
+                                                        </td>
+                                                        
+                                                    </tr>
+                                                    <?php
+                                                    $i++;
+                                                }
+                                            }
+                                        ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-success btn-md">Update Report</button>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- TABLE WRAPPER -->
+                </div>
+                <!-- SECTION WRAPPER -->
+            </div>
+        </div>
+        <!-- ROW-1 CLOSED -->
+
+    </div>
+</div>
+<!-- CONTAINER CLOSED -->
+</div>
+
+
+
+<!-- FOOTER -->
+<footer class="footer">
+<div class="container">
+    <div class="row align-items-center flex-row-reverse">
+        <div class="col-md-12 col-sm-12 text-center">
+            Copyright © 2023 <a href="#">Water-Pro</a>. Designed by <a href="#">  Octa Codes Technologies </a> All rights reserved.
+        </div>
+    </div>
+</div>
+</footer>
+<!-- FOOTER CLOSED -->
+</div>
+
+<!-- BACK-TO-TOP -->
+<a href="#top" id="back-to-top"><i class="fa fa-angle-up"></i></a>
+
+<!-- JQUERY JS -->
+<script src="<?php echo base_url(); ?>assets/js/jquery-3.4.1.min.js"></script>
+
+<!-- BOOTSTRAP JS -->
+<script src="<?php echo base_url(); ?>assets/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="<?php echo base_url(); ?>assets/plugins/bootstrap/js/popper.min.js"></script>
+
+<!-- SPARKLINE JS-->
+<script src="<?php echo base_url(); ?>assets/js/jquery.sparkline.min.js"></script>
+
+<!-- CHART-CIRCLE JS-->
+<script src="<?php echo base_url(); ?>assets/js/circle-progress.min.js"></script>
+
+<!-- RATING STAR JS-->
+<script src="<?php echo base_url(); ?>assets/plugins/rating/jquery.rating-stars.js"></script>
+
+<!-- C3 CHART JS -->
+<script src="<?php echo base_url(); ?>assets/plugins/charts-c3/d3.v5.min.js"></script>
+<script src="<?php echo base_url(); ?>assets/plugins/charts-c3/c3-chart.js"></script>
+
+<!-- INPUT MASK JS-->
+<script src="<?php echo base_url(); ?>assets/plugins/input-mask/jquery.mask.min.js"></script>
+<!-- SIDE-MENU JS -->
+<script src="<?php echo base_url(); ?>assets/plugins/sidemenu/sidemenu.js"></script>
+
+<!-- CUSTOM SCROLL BAR JS-->
+<script src="<?php echo base_url(); ?>assets/plugins/p-scroll/perfect-scrollbar.js"></script>
+<script src="<?php echo base_url(); ?>assets/plugins/p-scroll/p-scroll.js"></script>
+<script src="<?php echo base_url(); ?>assets/plugins/p-scroll/p-scroll-1.js"></script>
+
+<!-- DATA TABLE JS-->
+<script src="<?php echo base_url(); ?>assets/plugins/datatable/jquery.dataTables.min.js"></script>
+<script src="<?php echo base_url(); ?>assets/plugins/datatable/dataTables.bootstrap4.min.js"></script>
+<script src="<?php echo base_url(); ?>assets/plugins/datatable/datatable.js"></script>
+<script src="<?php echo base_url(); ?>assets/plugins/datatable/datatable-2.js"></script>
+<script src="<?php echo base_url(); ?>assets/plugins/datatable/dataTables.responsive.min.js"></script>
+
+<!-- SIDEBAR JS -->
+<script src="<?php echo base_url(); ?>assets/plugins/sidebar/sidebar.js"></script>
+
+<!-- FILE UPLOADES JS -->
+<script src="<?php echo base_url(); ?>assets/plugins/fileuploads/js/fileupload.js"></script>
+<script src="<?php echo base_url(); ?>assets/plugins/fileuploads/js/file-upload.js"></script>
+
+<!-- SELECT2 JS -->
+<script src="<?php echo base_url(); ?>assets/plugins/select2/select2.full.min.js"></script>
+
+<!-- BOOTSTRAP-DATERANGEPICKER JS -->
+<script src="<?php echo base_url(); ?>assets/plugins/bootstrap-daterangepicker/moment.min.js"></script>
+<script src="<?php echo base_url(); ?>assets/plugins/bootstrap-daterangepicker/daterangepicker.js"></script>
+
+<!-- TIMEPICKER JS -->
+<script src="<?php echo base_url(); ?>assets/plugins/time-picker/jquery.timepicker.js"></script>
+<script src="<?php echo base_url(); ?>assets/plugins/time-picker/toggles.min.js"></script>
+
+<!-- DATEPICKER JS -->
+<script src="<?php echo base_url(); ?>assets/plugins/date-picker/spectrum.js"></script>
+<script src="<?php echo base_url(); ?>assets/plugins/date-picker/jquery-ui.js"></script>
+<script src="<?php echo base_url(); ?>assets/plugins/input-mask/jquery.maskedinput.js"></script>
+
+<!-- MULTI SELECT JS-->
+<script src="<?php echo base_url(); ?>assets/plugins/multipleselect/multiple-select.js"></script>
+<script src="<?php echo base_url(); ?>assets/plugins/multipleselect/multi-select.js"></script>
+
+<!-- FORMELEMENTS JS -->
+<script src="<?php echo base_url(); ?>assets/js/form-elements.js"></script>
+
+<!-- Switcher js -->
+<script src="<?php echo base_url(); ?>assets/switcher/js/switcher.js"></script>
+
+<!-- CUSTOM JS -->
+<script src="<?php echo base_url(); ?>assets/js/custom.js"></script>
+<script>
+    /*
+    $(function(e) {
+        $('#example').DataTable();
+    });
+    */
+    
+</script>
+
+</body>
+
+</html>
+<?php 
+$this->session->unset_userdata('msg');
+?>
