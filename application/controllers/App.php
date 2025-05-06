@@ -145,11 +145,10 @@
 								$this->db->insert('supplymore_tbl',$data);
 								$supplymore_id = $this->db->insert_id();
 								// transaction per day ==================
-									$trans_date = date('Y-m-d');
 
 									$in = $this->db->get_where('transaction', [
 										'customer_id' => $customer_id,
-										'date' => $trans_date,
+										'date' => $supply_date,
 										'type' => 'in'
 									])->row_array();
 									
@@ -172,8 +171,9 @@
 											'amount' => 0,
 											'balance' => $in_balance_old,
 											'balance_status' => $in_status_old,
-											'date' => date('Y-m-d')
+											'date' => $supply_date
 										));
+
 										$this->db->insert('transaction', array(
 											'customer_id' => $customer_id,
 											'driver_id' => $driver['driver_id'],
@@ -181,27 +181,15 @@
 											'amount' => 0,
 											'balance' => $in_balance_old,
 											'balance_status' => $in_status_old,
-											'date' => date('Y-m-d')
+											'date' => $supply_date
 										));
 									}
-
-									// Get last transaction details
-									// $lastTrans = $this->db->select('balance,balance_status,amount')
-									// 					->from('transaction')
-									// 					->where('customer_id', $customer_id)
-									// 					->order_by('id', 'DESC')
-									// 					->limit(1)
-									// 					->get()
-									// 					->row_array();
-
 									
 									if ($tanki_bhari > 0) {
-										
 										$new_amount = $customer['kane_charge'] * $tanki_bhari;
-
 										$lastTrans = $this->db->get_where('transaction', [
 											'customer_id' => $customer_id,
-											'date' => $trans_date,
+											'date' => $supply_date,
 											'type' => 'out'
 										])->row_array();
 	
@@ -228,12 +216,13 @@
 										$this->db->where('id', $lastTrans['id'])->update('transaction', [
 											'balance' => $new_balance,
 											'balance_status' => $status,
-											'amount' => $collect_amount + $new_amount
+											'amount' => $collect_amount + $new_amount,
+											'driver_id' => $driver['driver_id']
 										]);
 
 										$lastTrans = $this->db->get_where('transaction', [
 											'customer_id' => $customer_id,
-											'date' => $trans_date,
+											'date' => $supply_date,
 											'type' => 'in'
 										])->row_array();
 	
@@ -271,7 +260,7 @@
 
 										$lastTrans = $this->db->get_where('transaction', [
 											'customer_id' => $customer_id,
-											'date' => $trans_date,
+											'date' => $supply_date,
 											'type' => 'in'
 										])->row_array();
 	
@@ -299,7 +288,8 @@
 										$this->db->where('id', $lastTrans['id'])->update('transaction', [
 											'balance' => $new_balance,
 											'balance_status' => $status,
-											'amount' => $collect_amount + $amount
+											'amount' => $collect_amount + $amount,
+											'driver_id' => $driver['driver_id']
 										]);
 									}
 
@@ -735,7 +725,7 @@
 														->from('transaction')
 														->where('customer_id', $customer_id)
 														->where('type','in')
-														->where('date',date('Y-m-d', strtotime($supply_date . ' -1 day')))
+														->where('date <', $trans_date)
 														->order_by('id', 'DESC')
 														->limit(1)
 														->get()
